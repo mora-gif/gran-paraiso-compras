@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>El Gran Paraíso — Compras</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
+:root{
+  --bg:#141210;--sf:#1e1a17;--sf2:#262019;
+  --gold:#c8922a;--gdim:rgba(200,146,42,.18);--gb:rgba(200,146,42,.22);
+  --cr:#ede5d8;--crd:rgba(237,229,216,.45);--crf:rgba(237,229,216,.12);
+  --rt:#e07060;--rbg:rgba(192,57,43,.15);
+  --at:#d4a84a;--abg:rgba(200,146,42,.15);
+  --gt:#5abf80;--gbg:rgba(39,174,96,.13);
+  --bt:#70a8d0;--bbg:rgba(41,128,185,.13);
+  --r:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--cr);font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;font-size:14px}
+
+/* HEADER */
+.hdr{background:var(--sf);border-bottom:1px solid var(--gb);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hdr h1{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gold)}
+.hdr p{font-size:10px;color:var(--crd);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+.hdr-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.hdr-meta{font-size:11px;color:var(--crf);text-align:right;line-height:1.6}
+.sync-status{font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--gb);color:var(--crd)}
+.sync-status.ok{border-color:rgba(39,174,96,.3);color:var(--gt)}
+.sync-status.saving{border-color:var(--gb);color:var(--at)}
+.sync-status.err{border-color:rgba(192,57,43,.3);color:var(--rt)}
+
+/* NAV */
+.nav{background:var(--sf);border-bottom:1px solid var(--gb);padding:0 28px;display:flex;gap:0}
+.nav-btn{padding:12px 18px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:400;color:var(--crd);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .15s;letter-spacing:.04em;text-transform:uppercase}
+.nav-btn:hover{color:var(--cr)}
+.nav-btn.on{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* STATS */
+.stats{display:flex;border-bottom:1px solid var(--gb);overflow-x:auto}
+.stat{padding:14px 24px;border-right:1px solid var(--gb);flex-shrink:0;min-width:100px}
+.sn{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;line-height:1}
+.sl{font-size:10px;color:var(--crd);text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
+.sc .sn{color:var(--rt)}.su .sn{color:var(--at)}.so .sn{color:var(--gt)}.sn0{color:var(--cr)}
+
+/* MAIN */
+main{padding:20px 28px;max-width:1360px;margin:0 auto}
+.page{display:none}.page.on{display:block}
+
+/* UPLOAD BAR */
+.ubar{background:var(--sf);border:1px solid var(--gb);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ubtn{position:relative;display:flex;align-items:center;gap:8px;padding:8px 16px;border:1px solid var(--gb);border-radius:6px;background:transparent;color:var(--crd);font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.ubtn:hover{border-color:var(--gold);color:var(--gold)}.ubtn.ok{border-color:var(--gt);color:var(--gt)}
+.ubtn input{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--crf);flex-shrink:0;transition:background .3s}.ubtn.ok .dot{background:var(--gt)}
+.act-btn{padding:8px 16px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;border:1px solid var(--gb)}
+.act-btn.prim{background:var(--gdim);color:var(--gold);border-color:var(--gb)}
+.act-btn.prim:hover{background:rgba(200,146,42,.28)}
+.act-btn.sec{background:transparent;color:var(--crd)}
+.act-btn.sec:hover{color:var(--cr)}
+
+/* SECTIONS */
+.sh{display:flex;align-items:center;gap:10px;margin:24px 0 12px}
+.sh h2{font-family:'Playfair Display',serif;font-size:14px;font-weight:600;white-space:nowrap}
+.sl2{flex:1;height:1px;background:var(--gb)}
+.pill{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:500;white-space:nowrap}
+.pr{background:rgba(192,57,43,.2);color:var(--rt);border:1px solid rgba(192,57,43,.2)}
+.pa{background:var(--abg);color:var(--at);border:1px solid var(--gb)}
+.pg{background:var(--gbg);color:var(--gt);border:1px solid rgba(39,174,96,.2)}
+
+/* FILTERS */
+.fbar{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.fb{padding:5px 13px;border:1px solid var(--gb);border-radius:20px;background:transparent;color:var(--crd);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer;transition:all .15s}
+.fb:hover,.fb.on{border-color:var(--gold);color:var(--gold);background:var(--gdim)}
+
+/* ALERT CARDS */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.card{background:var(--sf);border:1px solid var(--gb);border-radius:var(--r);padding:14px 16px;transition:border-color .2s}
+.card:hover{border-color:rgba(200,146,42,.4)}
+.card.cc{border-left:3px solid var(--rt)}.card.cu{border-left:3px solid var(--at)}.card.ck{border-left:3px solid var(--gt)}
+.ct{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.cn{font-size:13px;font-weight:500;color:var(--cr);line-height:1.3}
+.cpv{font-size:10px;color:var(--crd);margin-top:2px;text-transform:uppercase;letter-spacing:.05em}
+.cpill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;flex-shrink:0}
+.cc2{background:rgba(200,84,26,.18);color:#d88050;border:1px solid rgba(200,84,26,.2)}
+.cv2{background:var(--gbg);color:var(--gt);border:1px solid rgba(39,174,96,.2)}
+.ca{background:rgba(90,70,140,.18);color:#a090d8;border:1px solid rgba(140,120,200,.2)}
+.cf{background:var(--bbg);color:var(--bt);border:1px solid rgba(41,128,185,.2)}
+.bw{height:3px;background:rgba(237,229,216,.07);border-radius:2px;margin:7px 0;overflow:hidden}
+.b{height:100%;border-radius:2px;transition:width .5s ease}
+.br{background:var(--rt)}.ba{background:var(--at)}.bg2{background:var(--gt)}
+.cb{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;flex-wrap:wrap}
+.ci{font-size:11px;color:var(--crd);line-height:1.7}.ci strong{color:var(--cr);font-weight:500}
+.co{text-align:right;flex-shrink:0}
+.con{font-family:'Playfair Display',serif;font-size:19px;color:var(--gold);font-weight:600}
+.col{font-size:9px;color:var(--crf);text-transform:uppercase;letter-spacing:.08em}
+
+/* ORDER TABLE */
+.ob{margin-top:24px;background:var(--sf);border:1px solid var(--gb);border-radius:var(--r);overflow:hidden}
+.oh{padding:14px 18px;border-bottom:1px solid var(--gb);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.oh h3{font-family:'Playfair Display',serif;font-size:15px;color:var(--gold)}
+.eb{padding:7px 16px;background:var(--gdim);border:1px solid var(--gb);border-radius:5px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:11px;cursor:pointer}
+.eb:hover{background:rgba(200,146,42,.28)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:9px 14px;text-align:left;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--crf);border-bottom:1px solid var(--gb);background:rgba(237,229,216,.02)}
+td{padding:10px 14px;border-bottom:1px solid rgba(237,229,216,.04);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:rgba(237,229,216,.02)}
+.td0{width:8px;padding-right:0}.ud{width:7px;height:7px;border-radius:50%;display:inline-block}
+.td1{color:var(--crd)}.td2{color:var(--gold);font-weight:500}
+
+/* ── INVENTARIO PAGE ── */
+.inv-toolbar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.inv-search{background:rgba(237,229,216,.05);border:1px solid var(--gb);border-radius:6px;padding:8px 14px;color:var(--cr);font-family:'DM Sans',sans-serif;font-size:12px;width:220px}
+.inv-search:focus{outline:none;border-color:var(--gold)}
+.inv-search::placeholder{color:var(--crf)}
+.inv-table-wrap{background:var(--sf);border:1px solid var(--gb);border-radius:var(--r);overflow:hidden}
+.inv-table{width:100%;border-collapse:collapse}
+.inv-table th{padding:10px 16px;text-align:left;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--crf);border-bottom:1px solid var(--gb);background:rgba(237,229,216,.02)}
+.inv-table td{padding:9px 16px;border-bottom:1px solid rgba(237,229,216,.04);font-size:13px;vertical-align:middle}
+.inv-table tr:last-child td{border-bottom:none}
+.inv-table tr:hover td{background:rgba(237,229,216,.02)}
+.inv-input{background:rgba(237,229,216,.05);border:1px solid rgba(237,229,216,.1);border-radius:4px;padding:4px 8px;color:var(--cr);font-family:'DM Sans',sans-serif;font-size:12px;width:80px;text-align:right;transition:border-color .15s}
+.inv-input:focus{outline:none;border-color:var(--gold)}
+.inv-unit{font-size:11px;color:var(--crf);margin-left:4px}
+.inv-prov{font-size:10px;color:var(--crd);text-transform:uppercase;letter-spacing:.04em}
+.inv-days{font-size:12px;font-weight:500}
+.inv-days.ok{color:var(--gt)}.inv-days.warn{color:var(--at)}.inv-days.crit{color:var(--rt)}
+.save-row{display:flex;align-items:center;gap:8px;padding:14px 16px;border-top:1px solid var(--gb);background:rgba(237,229,216,.02)}
+.save-row p{font-size:11px;color:var(--crd);flex:1}
+.changed-dot{width:6px;height:6px;border-radius:50%;background:var(--at);display:inline-block;margin-right:6px}
+
+/* HISTORIAL */
+.hist-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.hist-item{background:var(--sf);border:1px solid var(--gb);border-radius:var(--r);padding:12px 16px}
+.hist-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.hist-fecha{font-size:12px;font-weight:500;color:var(--cr)}
+.hist-tipo{font-size:10px;padding:2px 8px;border-radius:20px}
+.hist-tipo.stock{background:var(--bbg);color:var(--bt);border:1px solid rgba(41,128,185,.2)}
+.hist-tipo.oracle{background:var(--gbg);color:var(--gt);border:1px solid rgba(39,174,96,.2)}
+.hist-detalle{font-size:11px;color:var(--crd);line-height:1.6}
+
+/* CFG */
+.cfg-box{margin-top:20px;background:var(--sf);border:1px solid var(--gb);border-radius:var(--r);overflow:hidden;margin-bottom:40px}
+.cfg-head{padding:12px 18px;border-bottom:1px solid var(--gb);display:flex;justify-content:space-between;cursor:pointer;user-select:none}
+.cfg-head h3{font-size:12px;font-weight:500;color:var(--crd);letter-spacing:.06em;text-transform:uppercase}
+.cfg-body{padding:14px 18px;display:none}.cfg-body.open{display:block}
+.cfg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px}
+.cfg-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 11px;background:rgba(237,229,216,.03);border-radius:5px;border:1px solid rgba(237,229,216,.05)}
+.cfg-item label{font-size:11px;color:var(--crd)}
+.cfg-item input{background:rgba(237,229,216,.06);border:1px solid rgba(237,229,216,.09);border-radius:4px;padding:3px 7px;color:var(--cr);font-family:'DM Sans',sans-serif;font-size:11px;width:46px;text-align:center}
+.cfg-item input:focus{outline:none;border-color:var(--gold)}
+.cfg-item .dl{font-size:10px;color:var(--crf)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--sf);border:1px solid rgba(39,174,96,.3);border-radius:var(--r);padding:10px 16px;font-size:12px;color:var(--gt);transform:translateY(60px);opacity:0;transition:all .25s;z-index:99;max-width:320px}
+.toast.on{transform:translateY(0);opacity:1}
+.toast.err{border-color:rgba(192,57,43,.3);color:var(--rt)}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px}
+.empty h3{font-family:'Playfair Display',serif;font-size:16px;color:rgba(237,229,216,.3);margin-bottom:8px}
+.empty p{font-size:12px;color:rgba(237,229,216,.2);max-width:300px;margin:0 auto;line-height:1.6}
+
+/* CONFIG TOKEN */
+.token-banner{background:var(--abg);border:1px solid var(--gb);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.token-banner p{font-size:12px;color:var(--at);flex:1}
+.token-input{background:rgba(237,229,216,.05);border:1px solid var(--gb);border-radius:5px;padding:6px 12px;color:var(--cr);font-family:monospace;font-size:12px;width:280px}
+.token-input:focus{outline:none;border-color:var(--gold)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div><h1>El Gran Paraíso</h1><p>Sistema de compras · La Boca</p></div>
+  <div class="hdr-right">
+    <div class="hdr-meta" id="hdate"></div>
+    <div class="sync-status" id="sync-status">Sin cambios</div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn on" onclick="goPage('alertas',this)">Alertas</button>
+  <button class="nav-btn" onclick="goPage('inventario',this)">Inventario</button>
+  <button class="nav-btn" onclick="goPage('oracle',this)">Cargar Oracle</button>
+  <button class="nav-btn" onclick="goPage('historial',this)">Historial</button>
+</nav>
+
+<div class="stats">
+  <div class="stat sc"><div class="sn" id="s1">—</div><div class="sl">Críticos</div></div>
+  <div class="stat su"><div class="sn" id="s2">—</div><div class="sl">Urgentes</div></div>
+  <div class="stat so"><div class="sn" id="s3">—</div><div class="sl">En stock</div></div>
+  <div class="stat"><div class="sn sn0" id="s4">—</div><div class="sl">Insumos</div></div>
+  <div class="stat"><div class="sn sn0" id="s5">—</div><div class="sl">Últ. sync</div></div>
+</div>
+
+<main>
+
+<!-- ── ALERTAS ── -->
+<div class="page on" id="page-alertas">
+  <div id="alertas-content">
+    <div class="empty"><h3>Cargando...</h3></div>
+  </div>
+</div>
+
+<!-- ── INVENTARIO ── -->
+<div class="page" id="page-inventario">
+  <div class="sh" style="margin-top:4px"><h2>Carga de inventario</h2><div class="sl2"></div>
+    <span style="font-size:11px;color:var(--crd)" id="inv-ultima"></span>
+  </div>
+  <p style="font-size:12px;color:var(--crd);margin-bottom:16px;line-height:1.7">
+    Ingresá el stock físico actual de cada insumo. Al guardar, queda registrado y sincronizado para todas las computadoras.
+    Las ventas de Oracle se descuentan automáticamente de estos valores.
+  </p>
+  <div class="inv-toolbar">
+    <input class="inv-search" type="text" placeholder="Buscar insumo..." oninput="filterInv(this.value)" id="inv-search">
+    <div class="fbar" style="margin:0">
+      <button class="fb on" onclick="filterCat('todos',this)">Todos</button>
+      <button class="fb" onclick="filterCat('carne',this)">Carnes</button>
+      <button class="fb" onclick="filterCat('verdura',this)">Verduras</button>
+      <button class="fb" onclick="filterCat('almacen',this)">Almacén</button>
+      <button class="fb" onclick="filterCat('pescado',this)">Pescado</button>
+    </div>
+  </div>
+  <div class="inv-table-wrap">
+    <table class="inv-table">
+      <thead><tr>
+        <th>Insumo</th><th>Proveedor</th><th>Categoría</th>
+        <th style="text-align:right">Stock actual</th>
+        <th style="text-align:right">Consumo/día</th>
+        <th style="text-align:right">Días restantes</th>
+      </tr></thead>
+      <tbody id="inv-tbody"></tbody>
+    </table>
+    <div class="save-row">
+      <p><span class="changed-dot" id="changed-dot" style="opacity:0"></span>
+        <span id="changed-count">Sin cambios pendientes</span></p>
+      <button class="act-btn prim" onclick="saveInventario()">Guardar inventario</button>
+      <button class="act-btn sec" onclick="renderInvTable()">Descartar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ORACLE ── -->
+<div class="page" id="page-oracle">
+  <div class="sh" style="margin-top:4px"><h2>Cargar reporte Oracle</h2><div class="sl2"></div></div>
+  <p style="font-size:12px;color:var(--crd);margin-bottom:20px;line-height:1.7">
+    Subí el archivo <strong style="color:var(--cr)">Menu Engineering</strong> exportado de Oracle.
+    El sistema descuenta automáticamente el consumo del stock actual y guarda el resultado.
+  </p>
+
+  <div class="ubar">
+    <label class="ubtn" id="btn-oracle"><div class="dot"></div><span id="lbl-oracle">Seleccionar archivo Oracle (.xlsx o .csv)</span><input type="file" accept=".xlsx,.xls,.csv" onchange="loadOracle(this)"></label>
+  </div>
+
+  <div id="oracle-preview" style="display:none">
+    <div class="sh"><h2>Vista previa — ventas detectadas</h2><div class="sl2"></div><span class="pill pg" id="oracle-count"></span></div>
+    <div class="inv-table-wrap">
+      <table class="inv-table">
+        <thead><tr><th>Plato</th><th>Clasificación</th><th style="text-align:right">Unidades / 7 días</th><th style="text-align:right">Insumos afectados</th></tr></thead>
+        <tbody id="oracle-tbody"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+      <button class="act-btn prim" onclick="aplicarOracle()">Aplicar y descontar del stock</button>
+      <span style="font-size:11px;color:var(--crd)" id="oracle-periodo"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ── HISTORIAL ── -->
+<div class="page" id="page-historial">
+  <div class="sh" style="margin-top:4px"><h2>Historial de movimientos</h2><div class="sl2"></div></div>
+  <div id="hist-content"><div class="empty"><h3>Sin movimientos registrados</h3><p>Los movimientos de stock e importaciones de Oracle aparecerán acá.</p></div></div>
+</div>
+
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const GITHUB = {
+  user: 'mora-gif',
+  repo: 'gran-paraiso-compras',
+  branch: 'main',
+  token: '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'
+};
+
+// ── LEAD TIMES ──
+const LT = {'LOS PRADOS':14,'AMANCAY':14,'LA DIVISA':14,'RUSO':14,'RUSSO':14,'FRESCO PEZ':3,'VERDULERIA':3,'CRIOLLO':7,'EL CRIOLLO':7,'APPLESHOW':7,'PANADERIA':2};
+
+// ── INSUMOS ──
+const INSUMOS = [
+  {n:'Bife de chorizo',p:'LOS PRADOS',c:'carne',u:'kg',pr:26990,dkg:16.6},
+  {n:'Vacío entero',p:'LOS PRADOS',c:'carne',u:'kg',pr:16300,dkg:8.8},
+  {n:'Asado con tapa',p:'LOS PRADOS',c:'carne',u:'kg',pr:30200,dkg:2.1},
+  {n:'Ojo de bife',p:'LOS PRADOS',c:'carne',u:'kg',pr:36900,dkg:1.8},
+  {n:'Tomahawk',p:'LOS PRADOS',c:'carne',u:'kg',pr:29400,dkg:0.7},
+  {n:'Molleja de corazón',p:'LOS PRADOS',c:'carne',u:'kg',pr:30411,dkg:0.3},
+  {n:'Chinchulines',p:'LOS PRADOS',c:'carne',u:'kg',pr:6500,dkg:0.6},
+  {n:'Riñón',p:'LOS PRADOS',c:'carne',u:'kg',pr:6150,dkg:0.2},
+  {n:'Matambrito de cerdo',p:'LOS PRADOS',c:'carne',u:'kg',pr:22000,dkg:0.1},
+  {n:'Pata y muslo',p:'LOS PRADOS',c:'carne',u:'kg',pr:7590,dkg:0.8},
+  {n:'Picaña',p:'AMANCAY',c:'carne',u:'kg',pr:20362,dkg:1.9},
+  {n:'Lomo',p:'AMANCAY',c:'carne',u:'kg',pr:22624,dkg:3.4},
+  {n:'Entraña',p:'AMANCAY',c:'carne',u:'kg',pr:23982,dkg:3.0},
+  {n:'Chorizo',p:'LA DIVISA',c:'carne',u:'kg',pr:9426,dkg:19.6},
+  {n:'Morcilla',p:'LA DIVISA',c:'carne',u:'kg',pr:6897,dkg:1.4},
+  {n:'Bondiola de cerdo',p:'RUSO',c:'carne',u:'kg',pr:7900,dkg:0.3},
+  {n:'Costillas de cerdo',p:'RUSO',c:'carne',u:'kg',pr:6201,dkg:0.5},
+  {n:'Pechuga',p:'RUSO',c:'carne',u:'kg',pr:7600,dkg:1.1},
+  {n:'Cordero',p:'RUSO',c:'carne',u:'kg',pr:5050,dkg:0.2},
+  {n:'Panceta fresca',p:'RUSO',c:'carne',u:'kg',pr:7600,dkg:0.3},
+  {n:'Salmón',p:'FRESCO PEZ',c:'pescado',u:'kg',pr:22900,dkg:0.8},
+  {n:'Langostinos',p:'FRESCO PEZ',c:'pescado',u:'kg',pr:12000,dkg:0.3},
+  {n:'Salmón ahumado',p:'FRESCO PEZ',c:'pescado',u:'kg',pr:35180,dkg:0.2},
+  {n:'Papa blanca',p:'VERDULERIA',c:'verdura',u:'kg',pr:1590,dkg:13.4},
+  {n:'Papines',p:'VERDULERIA',c:'verdura',u:'kg',pr:2130,dkg:1.5},
+  {n:'Tomate redondo',p:'VERDULERIA',c:'verdura',u:'kg',pr:2113,dkg:1.9},
+  {n:'Tomate cherry',p:'VERDULERIA',c:'verdura',u:'kg',pr:5800,dkg:0.5},
+  {n:'Cebolla',p:'VERDULERIA',c:'verdura',u:'kg',pr:1022,dkg:1.2},
+  {n:'Cebolla roja',p:'VERDULERIA',c:'verdura',u:'kg',pr:1433,dkg:0.4},
+  {n:'Lechuga criolla',p:'VERDULERIA',c:'verdura',u:'kg',pr:2475,dkg:0.7},
+  {n:'Lechuga francesa',p:'VERDULERIA',c:'verdura',u:'kg',pr:6533,dkg:0.4},
+  {n:'Rúcula',p:'VERDULERIA',c:'verdura',u:'kg',pr:680,dkg:0.6},
+  {n:'Espinaca',p:'VERDULERIA',c:'verdura',u:'kg',pr:1800,dkg:0.8},
+  {n:'Batata',p:'VERDULERIA',c:'verdura',u:'kg',pr:1780,dkg:0.6},
+  {n:'Boniato',p:'VERDULERIA',c:'verdura',u:'kg',pr:2580,dkg:0.3},
+  {n:'Morrón rojo',p:'VERDULERIA',c:'verdura',u:'kg',pr:2800,dkg:0.4},
+  {n:'Limón nacional',p:'VERDULERIA',c:'verdura',u:'kg',pr:2200,dkg:0.5},
+  {n:'Perejil',p:'VERDULERIA',c:'verdura',u:'kg',pr:4000,dkg:0.3},
+  {n:'Ajo',p:'VERDULERIA',c:'verdura',u:'kg',pr:23800,dkg:0.2},
+  {n:'Palta',p:'VERDULERIA',c:'verdura',u:'unid',pr:1967,dkg:0.5},
+  {n:'Zanahoria',p:'VERDULERIA',c:'verdura',u:'kg',pr:1680,dkg:0.3},
+  {n:'Aceite girasol 5L',p:'CRIOLLO',c:'almacen',u:'L',pr:0,dkg:0.5},
+  {n:'Sal parrillera',p:'APPLESHOW',c:'almacen',u:'kg',pr:0,dkg:0.3},
+  {n:'Chimichurri',p:'CRIOLLO',c:'almacen',u:'kg',pr:0,dkg:0.4},
+  {n:'Crema de leche',p:'CRIOLLO',c:'almacen',u:'kg',pr:0,dkg:0.6},
+];
+
+const RECETAS = {
+  'Bife de Chorizo':[['Bife de chorizo',0.32]],'Vacio (210100007)':[['Vacío entero',0.34]],
+  'Vacio (500000004)':[['Vacío entero',0.34]],'Entrana':[['Entraña',0.30]],
+  'Ojo de Bife':[['Ojo de bife',0.24]],'Lomo':[['Lomo',0.25]],'Picana':[['Picaña',0.30]],
+  'Tomahawk':[['Tomahawk',0.60]],'Chorizo':[['Chorizo',0.20]],'Morcilla':[['Morcilla',0.15]],
+  'Choripan (110300001)':[['Chorizo',0.18]],'Choripan GP (110300012)':[['Chorizo',0.18]],
+  'Super Choripan de Bill':[['Chorizo',0.22]],'Sugerencia Choripan del Chef':[['Chorizo',0.20]],
+  'Bondiola de cerdo':[['Bondiola de cerdo',0.30]],'Pechuga Grillada':[['Pechuga',0.25]],
+  'Muslo Grillado':[['Pata y muslo',0.30]],'Molleja':[['Molleja de corazón',0.18]],
+  'Chinchulin':[['Chinchulines',0.15]],'Rinon':[['Riñón',0.18]],
+  'Matambrito de cerdo':[['Matambrito de cerdo',0.28]],'Salmon':[['Salmón',0.22]],
+  'Parrillada Completa x 2 Pers':[['Chorizo',0.20],['Morcilla',0.13],['Vacío entero',0.225],['Entraña',0.15],['Chinchulines',0.10]],
+  'Parrillada Solo Carnes x 2 Pers':[['Chorizo',0.20],['Bife de chorizo',0.30],['Lomo',0.20],['Vacío entero',0.34]],
+  'Banderita':[['Asado con tapa',0.35]],'Asado Americano':[['Asado con tapa',0.40]],
+  'Papas Fritas':[['Papa blanca',0.25]],'Papas Rusticas':[['Papa blanca',0.25]],
+  'Papa a la Brasa GP':[['Papa blanca',0.20]],'Papas a la Brasa':[['Papa blanca',0.20]],
+  'Papines al Romero':[['Papines',0.20]],
+  'Ensalada Criolla':[['Tomate redondo',0.10],['Cebolla',0.06]],
+  'Ensalada de la Casa':[['Lechuga criolla',0.08],['Tomate redondo',0.06]],
+  'Vegetales Grillados':[['Morrón rojo',0.08],['Batata',0.10],['Cebolla',0.06]],
+};
+
+const OCATS = new Set(['ALIMENTOS','BEBIDAS S/ALCOHOL','BEBIDAS C/ALCOHOL','CARNES','CARNE VACUNA','AGUAS','SANDWICHES','GASEOSAS','CERVEZAS','ENTRADAS','ACOMPAÑAMIENTOS','POSTRES','ENSALADAS','JUGOS','CAFETERIA','VINOS TINTOS','VINOS BLANCOS','COPA DE VINO TINTO','COPA DE VINO BLANCO','COCKTAILS DE AUTOR','OTROS','MENSAJES','LICORES Y APERITIVOS','WHISKY','CARNE DE CERDO','CARNE DE POLLO','PESCADOS Y MARISCOS','PASTAS','MILANESAS','PARA EMPEZAR','PROVOLETAS','LIMONADAS','HAMBURGUESAS','VEGGIE','CARNE PORCINA','CARNE AVICOLA','Total','MENU','BEBIDA ABIERTA','ALIMENTO ABIERTO','NIETO SENETINER TINTO']);
+
+// ── STATE ──
+let stockData = { ultima_actualizacion:'', ultima_carga_oracle:'', stock:{}, historial:[] };
+let stockFileSHA = '';
+let pendingInvChanges = {};
+let oracleParsed = null;
+let invCatFilter = 'todos';
+let invTextFilter = '';
+let currentPage = 'alertas';
+let F = 'todos';
+
+// ── INIT ──
+document.getElementById('hdate').textContent = new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+loadStockFromGitHub();
+
+// ── GITHUB API ──
+async function loadStockFromGitHub() {
+  setSyncStatus('Sincronizando...','saving');
+  try {
+    const r = await fetch(`https://api.github.com/repos/${GITHUB.user}/${GITHUB.repo}/contents/stock.json`,{
+      headers:{'Authorization':`token ${GITHUB.token}`,'Accept':'application/vnd.github.v3+json'}
+    });
+    if (r.ok) {
+      const data = await r.json();
+      stockFileSHA = data.sha;
+      const decoded = JSON.parse(atob(data.content.replace(/\n/g,'')));
+      stockData = { historial:[], ...decoded };
+      setSyncStatus('Sincronizado ✓','ok');
+      toast('Stock cargado desde GitHub');
+    } else if (r.status === 404) {
+      // File doesn't exist yet, create it
+      await saveStockToGitHub('Archivo inicial');
+      setSyncStatus('Listo ✓','ok');
+    }
+  } catch(e) {
+    setSyncStatus('Sin conexión','err');
+    toast('No se pudo conectar a GitHub','err');
+  }
+  renderAll();
+}
+
+async function saveStockToGitHub(msg) {
+  setSyncStatus('Guardando...','saving');
+  stockData.ultima_actualizacion = new Date().toISOString();
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(stockData, null, 2))));
+  const body = { message: msg || 'Update stock', content, branch: GITHUB.branch };
+  if (stockFileSHA) body.sha = stockFileSHA;
+  try {
+    const r = await fetch(`https://api.github.com/repos/${GITHUB.user}/${GITHUB.repo}/contents/stock.json`,{
+      method:'PUT',
+      headers:{'Authorization':`token ${GITHUB.token}`,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
+      body: JSON.stringify(body)
+    });
+    if (r.ok) {
+      const data = await r.json();
+      stockFileSHA = data.content.sha;
+      setSyncStatus('Guardado ✓','ok');
+      document.getElementById('s5').textContent = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+      return true;
+    } else {
+      const err = await r.json();
+      setSyncStatus('Error al guardar','err');
+      toast('Error: ' + (err.message||'desconocido'), 'err');
+      return false;
+    }
+  } catch(e) {
+    setSyncStatus('Sin conexión','err');
+    toast('Sin conexión a GitHub','err');
+    return false;
+  }
+}
+
+function setSyncStatus(txt, cls) {
+  const el = document.getElementById('sync-status');
+  el.textContent = txt;
+  el.className = 'sync-status ' + (cls||'');
+}
+
+// ── HELPERS ──
+function getLT(p){const k=(p||'').toUpperCase();for(const[a,v]of Object.entries(LT))if(k.includes(a))return v;return 7}
+function getStock(n){return parseFloat(stockData.stock[n])||0}
+function calc(i){
+  const d=i.dkg||0,lt=getLT(i.p),st=getStock(i.n),nd=d*lt,dl=d>0?st/d:999,pc=nd>0?Math.min(st/nd,1):1,tp=Math.max(0,nd*1.2-st);
+  let lv='ok';if(d>0){if(dl<lt*.3)lv='critico';else if(dl<lt)lv='urgente';}
+  return{d,lt,st,dl,pc,tp:Math.ceil(tp*10)/10,lv}
+}
+function cpill(c){const m={carne:'cc2',verdura:'cv2',almacen:'ca',pescado:'cf'},l={carne:'Carne',verdura:'Verdura',almacen:'Almacén',pescado:'Pescado'};return`<span class="cpill ${m[c]||'ca'}">${l[c]||c}</span>`}
+function fmtDate(iso){if(!iso)return'—';return new Date(iso).toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+
+// ── RENDER ALL ──
+function renderAll(){
+  updateStats();
+  if(currentPage==='alertas') renderAlertas();
+  else if(currentPage==='inventario') renderInvTable();
+  else if(currentPage==='historial') renderHistorial();
+  const ua = stockData.ultima_actualizacion;
+  if(ua) document.getElementById('inv-ultima').textContent = 'Último guardado: '+fmtDate(ua);
+}
+
+// ── STATS ──
+function updateStats(){
+  const c=INSUMOS.filter(i=>calc(i).lv==='critico').length;
+  const u=INSUMOS.filter(i=>calc(i).lv==='urgente').length;
+  const o=INSUMOS.filter(i=>calc(i).lv==='ok').length;
+  document.getElementById('s1').textContent=c;
+  document.getElementById('s2').textContent=u;
+  document.getElementById('s3').textContent=o;
+  document.getElementById('s4').textContent=INSUMOS.length;
+}
+
+// ── ALERTAS PAGE ──
+function renderAlertas(){
+  const fl=F==='todos'?INSUMOS:F==='critico'?INSUMOS.filter(i=>calc(i).lv==='critico'):F==='urgente'?INSUMOS.filter(i=>['critico','urgente'].includes(calc(i).lv)):INSUMOS.filter(i=>i.c===F);
+  const cr=fl.filter(i=>calc(i).lv==='critico'),ur=fl.filter(i=>calc(i).lv==='urgente'),ok=fl.filter(i=>calc(i).lv==='ok');
+  const pc=INSUMOS.filter(i=>{const a=calc(i);return a.lv!=='ok'&&a.tp>0});
+  let h=`<div class="fbar"><button class="fb ${F==='todos'?'on':''}" onclick="setF('todos')">Todos</button><button class="fb ${F==='critico'?'on':''}" onclick="setF('critico')">Solo críticos</button><button class="fb ${F==='urgente'?'on':''}" onclick="setF('urgente')">Críticos + urgentes</button><button class="fb ${F==='carne'?'on':''}" onclick="setF('carne')">Carnes</button><button class="fb ${F==='verdura'?'on':''}" onclick="setF('verdura')">Verduras</button><button class="fb ${F==='almacen'?'on':''}" onclick="setF('almacen')">Almacén</button></div>`;
+  if(cr.length)h+=`<div class="sh"><h2>Pedir hoy</h2><div class="sl2"></div><span class="pill pr">${cr.length} insumos</span></div><div class="grid">${cr.map(alertCard).join('')}</div>`;
+  if(ur.length)h+=`<div class="sh"><h2>Urgente</h2><div class="sl2"></div><span class="pill pa">${ur.length} insumos</span></div><div class="grid">${ur.map(alertCard).join('')}</div>`;
+  if(ok.length&&(F==='todos'||F===ok[0]?.c))h+=`<div class="sh"><h2>Stock suficiente</h2><div class="sl2"></div><span class="pill pg">${ok.length} insumos</span></div><div class="grid">${ok.map(alertCard).join('')}</div>`;
+  if(pc.length){
+    const rows=pc.sort((a,b)=>(calc(a).lv==='critico'?0:1)-(calc(b).lv==='critico'?0:1)).map(i=>{const a=calc(i),dc=a.lv==='critico'?'var(--rt)':'var(--at)',tt=a.tp*i.pr;return`<tr><td class="td0"><span class="ud" style="background:${dc}"></span></td><td>${i.n}</td><td class="td1" style="font-size:10px;text-transform:uppercase">${i.p}</td><td><strong>${a.tp} ${i.u}</strong></td><td class="td1">${a.lt}d</td><td class="td1">${i.pr>0?'$'+i.pr.toLocaleString('es-AR'):'—'}</td><td class="td2">${tt>0?'$'+Math.round(tt).toLocaleString('es-AR'):'—'}</td></tr>`}).join('');
+    h+=`<div class="ob"><div class="oh"><h3>Orden de compra</h3><button class="eb" onclick="expCSV()">Exportar CSV</button></div><table><thead><tr><th></th><th>Insumo</th><th>Proveedor</th><th>Cantidad</th><th>Lead</th><th>Precio unit.</th><th>Total est.</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  // Lead time config
+  const cfg=Object.entries(LT).map(([p,d])=>`<div class="cfg-item"><label>${p}</label><div style="display:flex;align-items:center;gap:4px"><input type="number" min="1" max="60" value="${d}" onchange="LT['${p}']=parseInt(this.value)||${d};renderAlertas()"><span class="dl">días</span></div></div>`).join('');
+  h+=`<div class="cfg-box"><div class="cfg-head" onclick="tCfg()"><h3>Lead times por proveedor</h3><span style="font-size:11px;color:var(--crf)" id="ctg">▼ ver</span></div><div class="cfg-body" id="cbdy"><div class="cfg-grid">${cfg}</div></div></div>`;
+  document.getElementById('alertas-content').innerHTML=h;
+}
+
+function alertCard(i){
+  const a=calc(i),bp=Math.max(3,Math.round(a.pc*100)),bc=a.lv==='critico'?'br':a.lv==='urgente'?'ba':'bg2';
+  const info=a.d>0?`Stock: <strong>${a.st} ${i.u}</strong><br>Consumo/día: ${a.d.toFixed(1)} kg<br>Días restantes: ~${a.dl<100?a.dl.toFixed(1):'∞'}`:'Sin ventas registradas';
+  const ord=a.tp>0&&a.lv!=='ok'?`<div class="co"><div class="con">${a.tp} ${i.u}</div><div class="col">a pedir</div></div>`:'';
+  return`<div class="card c${a.lv[0]}"><div class="ct"><div><div class="cn">${i.n}</div><div class="cpv">${i.p} · lead ${a.lt}d</div></div>${cpill(i.c)}</div><div class="bw"><div class="b ${bc}" style="width:${bp}%"></div></div><div class="cb"><div class="ci">${info}</div>${ord}</div></div>`;
+}
+
+// ── INVENTARIO PAGE ──
+function renderInvTable(){
+  pendingInvChanges = {};
+  updateChangedCount();
+  const items = INSUMOS.filter(i=>{
+    if(invCatFilter!=='todos'&&i.c!==invCatFilter)return false;
+    if(invTextFilter&&!i.n.toLowerCase().includes(invTextFilter.toLowerCase()))return false;
+    return true;
+  });
+  const rows = items.map(i=>{
+    const a=calc(i),st=getStock(i.n);
+    const dlClass=a.lv==='critico'?'crit':a.lv==='urgente'?'warn':'ok';
+    const dlTxt=a.d>0?(a.dl<100?a.dl.toFixed(1)+' días':'∞'):'—';
+    return`<tr>
+      <td><span style="font-size:13px;font-weight:500">${i.n}</span></td>
+      <td class="inv-prov">${i.p}</td>
+      <td>${cpill(i.c)}</td>
+      <td style="text-align:right">
+        <input class="inv-input" type="number" min="0" step="0.5"
+          value="${st||''}" placeholder="0"
+          data-name="${i.n}"
+          onchange="setPending('${i.n}',parseFloat(this.value)||0)">
+        <span class="inv-unit">${i.u}</span>
+      </td>
+      <td style="text-align:right;color:var(--crd);font-size:12px">${a.d>0?a.d.toFixed(1)+' kg/d':'—'}</td>
+      <td style="text-align:right"><span class="inv-days ${dlClass}">${dlTxt}</span></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('inv-tbody').innerHTML = rows || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--crf)">Sin resultados</td></tr>';
+}
+
+function setPending(name, val){
+  pendingInvChanges[name] = val;
+  updateChangedCount();
+}
+
+function updateChangedCount(){
+  const n = Object.keys(pendingInvChanges).length;
+  document.getElementById('changed-dot').style.opacity = n>0?1:0;
+  document.getElementById('changed-count').textContent = n>0?`${n} cambio${n>1?'s':''} pendiente${n>1?'s':''}`:'Sin cambios pendientes';
+}
+
+async function saveInventario(){
+  if(Object.keys(pendingInvChanges).length===0){toast('Sin cambios para guardar');return;}
+  const fecha = new Date().toISOString();
+  const prev = {};
+  for(const[k,v] of Object.entries(pendingInvChanges)){
+    prev[k] = getStock(k);
+    stockData.stock[k] = v;
+  }
+  // Add to historial
+  if(!stockData.historial) stockData.historial=[];
+  stockData.historial.unshift({
+    tipo:'stock',fecha,
+    detalle:`Inventario cargado manualmente: ${Object.keys(pendingInvChanges).length} insumos actualizados`,
+    cambios: Object.entries(pendingInvChanges).map(([k,v])=>({n:k,antes:prev[k],despues:v}))
+  });
+  if(stockData.historial.length>50) stockData.historial=stockData.historial.slice(0,50);
+  const ok = await saveStockToGitHub(`Inventario ${new Date().toLocaleDateString('es-AR')}`);
+  if(ok){
+    pendingInvChanges={};
+    updateChangedCount();
+    toast('Inventario guardado y sincronizado');
+    updateStats();
+    if(currentPage==='alertas') renderAlertas();
+  }
+}
+
+function filterCat(cat, btn){
+  invCatFilter=cat;
+  document.querySelectorAll('.fbar .fb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderInvTable();
+}
+
+function filterInv(val){ invTextFilter=val; renderInvTable(); }
+
+// ── ORACLE PAGE ──
+function loadOracle(inp){
+  const f=inp.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    try{
+      let data;
+      if(f.name.endsWith('.csv')){
+        data=e.target.result.split('\n').map(l=>l.split(',').map(c=>c.replace(/"/g,'').trim())).map(r=>r.map((v,i)=>i===6?parseFloat(v)||v:v));
+      } else {
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:null});
+      }
+      // Extract period from row 3
+      let periodo='';
+      for(const row of data){if(row&&row[0]==='Business Dates'){periodo=row[1]||'';break;}}
+      // Parse items
+      let inD=false;const ventas={};
+      for(const row of data){
+        if(!row||!row[0])continue;
+        if(String(row[0]).trim()==='Name'){inD=true;continue}
+        if(!inD)continue;
+        const nm=String(row[0]).trim(),cl=row[1]?String(row[1]).trim():'',qty=row[6];
+        if(OCATS.has(nm))continue;
+        if(['Star','Puzzle','Plow Horse','Dog'].includes(cl)&&typeof qty==='number'&&qty>0)
+          ventas[nm]={q7:qty,qd:qty/7,cl};
+      }
+      const n=Object.keys(ventas).length;
+      if(n>0){
+        oracleParsed={ventas,periodo,filename:f.name,fecha:new Date().toISOString()};
+        document.getElementById('btn-oracle').classList.add('ok');
+        document.getElementById('lbl-oracle').textContent=f.name;
+        renderOraclePreview(ventas,n,periodo);
+        toast(`Oracle: ${n} platos detectados`);
+      } else toast('No se encontraron ventas en el archivo','err');
+    }catch(e){toast('Error al leer el archivo','err');}
+  };
+  f.name.endsWith('.csv')?rd.readAsText(f,'UTF-8'):rd.readAsArrayBuffer(f);
+}
+
+function renderOraclePreview(ventas,n,periodo){
+  document.getElementById('oracle-count').textContent=`${n} platos`;
+  document.getElementById('oracle-periodo').textContent=periodo?`Período: ${periodo}`:'';
+  // Show top platos with recipe matches
+  const rows=Object.entries(ventas)
+    .sort((a,b)=>b[1].q7-a[1].q7).slice(0,30)
+    .map(([nm,vd])=>{
+      const r=RECETAS[nm];
+      const insumos=r?r.map(([i])=>i).join(', '):'Sin receta mapeada';
+      const clCls=vd.cl==='Star'?'gt':vd.cl==='Plow Horse'?'at':'td1';
+      return`<tr><td>${nm}</td><td style="color:var(--${clCls})">${vd.cl}</td><td style="text-align:right">${vd.q7}</td><td style="font-size:11px;color:var(--crd)">${insumos}</td></tr>`;
+    }).join('');
+  document.getElementById('oracle-tbody').innerHTML=rows;
+  document.getElementById('oracle-preview').style.display='block';
+}
+
+async function aplicarOracle(){
+  if(!oracleParsed){toast('Primero cargá un archivo Oracle','err');return;}
+  const {ventas,periodo,filename,fecha}=oracleParsed;
+  // Calculate consumption
+  const consumo={};
+  for(const[pl,vd]of Object.entries(ventas)){
+    const r=RECETAS[pl];if(!r)continue;
+    for(const[nm,kg]of r){
+      consumo[nm]=(consumo[nm]||0)+vd.qd*kg;
+    }
+  }
+  // Discount from stock
+  const movimientos=[];
+  for(const[nm,kgDia]of Object.entries(consumo)){
+    const ins=INSUMOS.find(i=>i.n===nm);if(!ins)continue;
+    // Calculate days in period (7 days assumed from weekly Oracle report)
+    const dias=7;
+    const consumoTotal=Math.round(kgDia*dias*10)/10;
+    const antes=getStock(nm);
+    const despues=Math.max(0,Math.round((antes-consumoTotal)*10)/10);
+    stockData.stock[nm]=despues;
+    movimientos.push({n:nm,antes,consumido:consumoTotal,despues});
+    // Also update dkg in INSUMOS
+    const i=INSUMOS.find(x=>x.n===nm);
+    if(i)i.dkg=Math.round(kgDia*100)/100;
+  }
+  stockData.ultima_carga_oracle=fecha;
+  if(!stockData.historial)stockData.historial=[];
+  stockData.historial.unshift({
+    tipo:'oracle',fecha,
+    detalle:`Oracle importado: ${filename}${periodo?' ('+periodo+')':''} · ${Object.keys(ventas).length} platos · ${movimientos.length} insumos descontados`,
+    movimientos
+  });
+  if(stockData.historial.length>50)stockData.historial=stockData.historial.slice(0,50);
+  const ok=await saveStockToGitHub(`Oracle ${new Date().toLocaleDateString('es-AR')}`);
+  if(ok){
+    toast(`Stock actualizado: ${movimientos.length} insumos descontados`);
+    oracleParsed=null;
+    document.getElementById('oracle-preview').style.display='none';
+    document.getElementById('btn-oracle').classList.remove('ok');
+    document.getElementById('lbl-oracle').textContent='Seleccionar archivo Oracle (.xlsx o .csv)';
+    renderAll();
+  }
+}
+
+// ── HISTORIAL ──
+function renderHistorial(){
+  if(!stockData.historial||!stockData.historial.length){
+    document.getElementById('hist-content').innerHTML='<div class="empty"><h3>Sin movimientos registrados</h3><p>Los movimientos de stock e importaciones de Oracle aparecerán acá.</p></div>';
+    return;
+  }
+  const items=stockData.historial.map(h=>{
+    const tipoCls=h.tipo==='oracle'?'oracle':'stock';
+    const tipoTxt=h.tipo==='oracle'?'Oracle':'Inventario';
+    let det=`<div class="hist-detalle">${h.detalle}`;
+    if(h.movimientos&&h.movimientos.length){
+      det+=`<br><span style="color:var(--crf)">Insumos: ${h.movimientos.map(m=>`${m.n} ${m.antes}→${m.despues}kg`).join(' · ')}</span>`;
+    }
+    if(h.cambios&&h.cambios.length){
+      det+=`<br><span style="color:var(--crf)">${h.cambios.map(c=>`${c.n}: ${c.antes||0}→${c.despues}kg`).join(' · ')}</span>`;
+    }
+    det+=`</div>`;
+    return`<div class="hist-item"><div class="hist-top"><span class="hist-fecha">${fmtDate(h.fecha)}</span><span class="hist-tipo ${tipoCls}">${tipoTxt}</span></div>${det}</div>`;
+  }).join('');
+  document.getElementById('hist-content').innerHTML=`<div class="hist-list">${items}</div>`;
+}
+
+// ── NAV ──
+function goPage(page, btn){
+  currentPage=page;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('page-'+page).classList.add('on');
+  btn.classList.add('on');
+  if(page==='alertas')renderAlertas();
+  else if(page==='inventario')renderInvTable();
+  else if(page==='historial')renderHistorial();
+}
+
+function setF(f){F=f;renderAlertas()}
+function tCfg(){const b=document.getElementById('cbdy'),t=document.getElementById('ctg');b.classList.toggle('open');t.textContent=b.classList.contains('open')?'▲ ocultar':'▼ ver'}
+
+function expCSV(){
+  const pc=INSUMOS.filter(i=>{const a=calc(i);return a.lv!=='ok'&&a.tp>0});
+  const rows=[['Insumo','Proveedor','Categoria','Cantidad a pedir','Unidad','Lead time (dias)','Precio unit.','Total estimado ARS','Urgencia']];
+  pc.forEach(i=>{const a=calc(i);rows.push([i.n,i.p,i.c,a.tp,i.u,a.lt,i.pr,Math.round(a.tp*i.pr),a.lv])});
+  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const b=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const u=URL.createObjectURL(b);const a=document.createElement('a');
+  a.href=u;a.download=`orden_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  URL.revokeObjectURL(u);toast('Orden exportada');
+}
+
+function toast(m,type){
+  const t=document.getElementById('toast');
+  t.textContent=m;t.className='toast on'+(type==='err'?' err':'');
+  setTimeout(()=>t.classList.remove('on'),3500);
+}
+</script>
+</body>
+</html>
