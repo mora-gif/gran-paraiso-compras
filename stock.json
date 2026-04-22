@@ -1,5 +1,162 @@
 {
-  "ultima_actualizacion": "",
-  "ultima_carga_oracle": "",
-  "stock": {}
+  "historial": [
+    {
+      "tipo": "oracle",
+      "fecha": "2026-04-22T01:41:13.840Z",
+      "detalle": "Oracle importado: Menu Engineering Las 7 days (1).xlsx (4/13/2026 - 4/19/2026) · 298 platos · 21 insumos descontados",
+      "movimientos": [
+        {
+          "n": "Vacío entero",
+          "antes": 0,
+          "consumido": 62,
+          "despues": 0
+        },
+        {
+          "n": "Bondiola de cerdo",
+          "antes": 0,
+          "consumido": 0.3,
+          "despues": 0
+        },
+        {
+          "n": "Chorizo",
+          "antes": 0,
+          "consumido": 129.7,
+          "despues": 0
+        },
+        {
+          "n": "Papa blanca",
+          "antes": 0,
+          "consumido": 99.7,
+          "despues": 0
+        },
+        {
+          "n": "Lechuga criolla",
+          "antes": 0,
+          "consumido": 4.9,
+          "despues": 0
+        },
+        {
+          "n": "Tomate redondo",
+          "antes": 0,
+          "consumido": 13.4,
+          "despues": 0
+        },
+        {
+          "n": "Cebolla",
+          "antes": 0,
+          "consumido": 8.2,
+          "despues": 0
+        },
+        {
+          "n": "Morrón rojo",
+          "antes": 0,
+          "consumido": 3.1,
+          "despues": 0
+        },
+        {
+          "n": "Batata",
+          "antes": 0,
+          "consumido": 3.9,
+          "despues": 0
+        },
+        {
+          "n": "Pechuga",
+          "antes": 0,
+          "consumido": 7.5,
+          "despues": 0
+        },
+        {
+          "n": "Pata y muslo",
+          "antes": 0,
+          "consumido": 1.8,
+          "despues": 0
+        },
+        {
+          "n": "Salmón",
+          "antes": 0,
+          "consumido": 2.2,
+          "despues": 0
+        },
+        {
+          "n": "Bife de chorizo",
+          "antes": 0,
+          "consumido": 116,
+          "despues": 0
+        },
+        {
+          "n": "Lomo",
+          "antes": 0,
+          "consumido": 23.8,
+          "despues": 0
+        },
+        {
+          "n": "Morcilla",
+          "antes": 0,
+          "consumido": 9.6,
+          "despues": 0
+        },
+        {
+          "n": "Entraña",
+          "antes": 0,
+          "consumido": 20.7,
+          "despues": 0
+        },
+        {
+          "n": "Chinchulines",
+          "antes": 0,
+          "consumido": 6.7,
+          "despues": 0
+        },
+        {
+          "n": "Ojo de bife",
+          "antes": 0,
+          "consumido": 12.7,
+          "despues": 0
+        },
+        {
+          "n": "Picaña",
+          "antes": 0,
+          "consumido": 13.2,
+          "despues": 0
+        },
+        {
+          "n": "Asado con tapa",
+          "antes": 0,
+          "consumido": 14.5,
+          "despues": 0
+        },
+        {
+          "n": "Riñón",
+          "antes": 0,
+          "consumido": 0.4,
+          "despues": 0
+        }
+      ]
+    }
+  ],
+  "ultima_actualizacion": "2026-04-22T01:41:22.689Z",
+  "ultima_carga_oracle": "2026-04-22T01:41:13.840Z",
+  "stock": {
+    "Vacío entero": 0,
+    "Bondiola de cerdo": 0,
+    "Chorizo": 0,
+    "Papa blanca": 0,
+    "Lechuga criolla": 0,
+    "Tomate redondo": 0,
+    "Cebolla": 0,
+    "Morrón rojo": 0,
+    "Batata": 0,
+    "Pechuga": 0,
+    "Pata y muslo": 0,
+    "Salmón": 0,
+    "Bife de chorizo": 0,
+    "Lomo": 0,
+    "Morcilla": 0,
+    "Entraña": 0,
+    "Chinchulines": 0,
+    "Ojo de bife": 0,
+    "Picaña": 0,
+    "Asado con tapa": 0,
+    "Riñón": 0
+  }
 }
